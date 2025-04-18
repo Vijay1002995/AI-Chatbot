@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FitBot - Your Fitness Assistant</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #00a896;
+            --secondary: #02c39a;
+            --light: #f0f3bd;
+            --dark: #05668d;
+            --darker: #028090;
+            --white: #ffffff;
+            --gray: #f5f5f5;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--gray);
+            color: #333;
+            line-height: 1.6;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .chat-container {
+            max-width: 500px;
+            width: 100%;
+            height: 100%;
+            margin: 0 auto;
+            border-radius: 0;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            background-color: var(--white);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+        
+        .chat-header {
+            background: linear-gradient(135deg, var(--primary), var(--darker));
+            color: var(--white);
+            padding: 12px 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
+        .chat-header img {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+        }
+        
+        .chat-header h2 {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+        
+        .chat-header p {
+            font-size: 0.75rem;
+            opacity: 0.9;
+        }
+        
+        .chat-messages {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            background-color: var(--white);
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .message {
+            margin-bottom: 12px;
+            padding: 10px 12px;
+            border-radius: 15px;
+            max-width: 90%;
+            word-wrap: break-word;
+            position: relative;
+            opacity: 0;
+            transform: translateY(10px);
+            animation: fadeIn 0.3s ease forwards;
+            font-size: 0.95rem;
+        }
+        
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .bot-message {
+            background-color: var(--gray);
+            border-bottom-left-radius: 5px;
+            align-self: flex-start;
+            margin-right: auto;
+            color: #333;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        
+        .user-message {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: var(--white);
+            border-bottom-right-radius: 5px;
+            align-self: flex-end;
+            margin-left: auto;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .message-time {
+            display: block;
+            font-size: 0.65rem;
+            opacity: 0.7;
+            margin-top: 5px;
+            text-align: right;
+        }
+        
+        .chat-input-area {
+            padding: 12px;
+            background-color: var(--white);
+            border-top: 1px solid #eee;
+            display: flex;
+            gap: 8px;
+            position: sticky;
+            bottom: 0;
+        }
+        
+        #user-input {
+            flex: 1;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 25px;
+            outline: none;
+            font-size: 0.9rem;
+            transition: border 0.3s;
+            min-height: 45px;
+        }
+        
+        #user-input:focus {
+            border-color: var(--primary);
+        }
+        
+        #send-button {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: var(--white);
+            border: none;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: transform 0.2s, opacity 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        #send-button:hover {
+            transform: scale(1.05);
+        }
+        
+        #send-button:active {
+            transform: scale(0.95);
+        }
+        
+        .suggestions {
+            display: flex;
+            flex-wrap: wrap;
+            padding: 8px 12px;
+            background-color: var(--white);
+            border-top: 1px solid #eee;
+            gap: 6px;
+            position: sticky;
+            bottom: 69px;
+            z-index: 5;
+            background: white;
+        }
+        
+        .suggestion-btn {
+            background-color: var(--light);
+            border: none;
+            border-radius: 18px;
+            padding: 6px 12px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+            color: var(--dark);
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            white-space: nowrap;
+        }
+        
+        .suggestion-btn i {
+            font-size: 0.9rem;
+        }
+        
+        .suggestion-btn:hover {
+            background-color: var(--secondary);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        .typing-indicator {
+            display: flex;
+            padding: 8px 12px;
+            background-color: var(--gray);
+            border-radius: 15px;
+            width: fit-content;
+            margin-bottom: 12px;
+        }
+        
+        .typing-dot {
+            width: 6px;
+            height: 6px;
+            background-color: #999;
+            border-radius: 50%;
+            margin: 0 2px;
+            animation: typingAnimation 1.4s infinite ease-in-out;
+        }
+        
+        .typing-dot:nth-child(1) {
+            animation-delay: 0s;
+        }
+        
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+        
+        @keyframes typingAnimation {
+            0%, 60%, 100% {
+                transform: translateY(0);
+            }
+            30% {
+                transform: translateY(-4px);
+            }
+        }
+        
+        .exercise-card {
+            background: white;
+            border-radius: 8px;
+            padding: 12px;
+            margin: 8px 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border-left: 3px solid var(--primary);
+        }
+        
+        .exercise-card h4 {
+            color: var(--dark);
+            margin-bottom: 4px;
+            font-size: 0.95rem;
+        }
+        
+        .exercise-card p {
+            font-size: 0.85rem;
+            color: #555;
+        }
+        
+        .exercise-card .meta {
+            display: flex;
+            gap: 12px;
+            margin-top: 8px;
+            font-size: 0.75rem;
+        }
+        
+        .exercise-card .meta span {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            color: var(--darker);
+        }
+        
+        /* Responsive adjustments */
+        @media (min-width: 500px) {
+            body {
+                padding: 10px;
+                height: 100vh;
+            }
+            
+            .chat-container {
+                border-radius: 15px;
+                height: 95vh;
+                max-height: 800px;
+            }
+            
+            .chat-header {
+                padding: 15px 20px;
+            }
+            
+            .chat-header img {
+                width: 40px;
+                height: 40px;
+            }
+            
+            .chat-header h2 {
+                font-size: 1.2rem;
+            }
+            
+            .chat-header p {
+                font-size: 0.8rem;
+            }
+            
+            .chat-messages {
+                padding: 20px;
+            }
+            
+            .message {
+                padding: 12px 15px;
+                font-size: 1rem;
+            }
+            
+            .suggestions {
+                padding: 10px 15px;
+                gap: 8px;
+            }
+            
+            .suggestion-btn {
+                padding: 8px 15px;
+                font-size: 0.85rem;
+            }
+        }
+        
+        @media (max-width: 400px) {
+            .suggestion-btn {
+                padding: 6px 10px;
+                font-size: 0.75rem;
+            }
+            
+            .suggestion-btn i {
+                font-size: 0.8rem;
+            }
+            
+            .chat-header {
+                padding: 10px 12px;
+            }
+            
+            .chat-header h2 {
+                font-size: 1rem;
+            }
+            
+            .message {
+                max-width: 95%;
+            }
+        }
+        
+        @media (max-width: 350px) {
+            .suggestions {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .suggestion-btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <img src="https://cdn-icons-png.flaticon.com/512/2936/2936886.png" alt="FitBot">
+            <div>
+                <h2>FitBot Assistant</h2>
+                <p>Ask me about fitness & wellbeing</p>
+            </div>
+        </div>
+        <div class="chat-messages" id="chat-messages">
+            <div class="message bot-message" style="opacity: 1; transform: translateY(0);">
+                <div>Hi there! 👋 I'm FitBot, your personal fitness assistant.</div>
+                <div style="margin-top: 8px;">I can help you with:</div>
+                <ul style="margin-top: 4px; padding-left: 18px; font-size: 0.9rem;">
+                    <li>Exercise routines</li>
+                    <li>Workout plans</li>
+                    <li>Nutrition advice</li>
+                    <li>Health & wellbeing tips</li>
+                </ul>
+                <div style="margin-top: 8px;">What would you like to focus on today?</div>
+                <div class="message-time">Just now</div>
+            </div>
+        </div>
+        <div class="suggestions">
+            <button class="suggestion-btn"><i class="fas fa-dumbbell"></i> Beginner</button>
+            <button class="suggestion-btn"><i class="fas fa-fire"></i> Fat loss</button>
+            <button class="suggestion-btn"><i class="fas fa-apple-alt"></i> Nutrition</button>
+            <button class="suggestion-btn"><i class="fas fa-heartbeat"></i> Cardio</button>
+        </div>
+        <div class="chat-input-area">
+            <input type="text" id="user-input" placeholder="Message FitBot..." autocomplete="off">
+            <button id="send-button"><i class="fas fa-paper-plane"></i></button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const chatMessages = document.getElementById('chat-messages');
+            const userInput = document.getElementById('user-input');
+            const sendButton = document.getElementById('send-button');
+            const suggestionButtons = document.querySelectorAll('.suggestion-btn');
+            
+            // Get current time in HH:MM format
+            function getCurrentTime() {
+                const now = new Date();
+                return now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            }
+            
+            // Show typing indicator
+            function showTyping() {
+                const typingDiv = document.createElement('div');
+                typingDiv.className = 'typing-indicator';
+                typingDiv.innerHTML = `
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                `;
+                chatMessages.appendChild(typingDiv);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+                return typingDiv;
+            }
+            
+            // Hide typing indicator
+            function hideTyping(typingElement) {
+                if (typingElement && typingElement.parentNode) {
+                    typingElement.remove();
+                }
+            }
+            
+            // Add message to chat
+            function addMessage(text, isUser) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${isUser ? 'user-message' : 'bot-message'}`;
+                
+                // Format exercise cards if detected
+                if (!isUser && text.includes('{exercise}')) {
+                    const exercises = [
+                        {
+                            name: "Squats",
+                            description: "Great for legs and glutes. Keep your back straight and lower until thighs are parallel to the floor.",
+                            sets: "3-4 sets",
+                            reps: "10-15 reps"
+                        },
+                        {
+                            name: "Push-ups",
+                            description: "Works chest, shoulders and triceps. Keep your body straight and lower until chest nearly touches the floor.",
+                            sets: "3 sets",
+                            reps: "8-12 reps"
+                        },
+                        {
+                            name: "Plank",
+                            description: "Core strengthening exercise. Maintain a straight line from head to heels.",
+                            sets: "3 sets",
+                            duration: "30-60 sec"
+                        }
+                    ];
+                    
+                    let exerciseHTML = '';
+                    exercises.forEach(ex => {
+                        exerciseHTML += `
+                        <div class="exercise-card">
+                            <h4>${ex.name}</h4>
+                            <p>${ex.description}</p>
+                            <div class="meta">
+                                <span><i class="fas fa-redo"></i> ${ex.reps || ex.duration}</span>
+                                <span><i class="fas fa-layer-group"></i> ${ex.sets}</span>
+                            </div>
+                        </div>
+                        `;
+                    });
+                    
+                    messageDiv.innerHTML = exerciseHTML + `<div class="message-time">${getCurrentTime()}</div>`;
+                } else {
+                    messageDiv.innerHTML = `${text}<div class="message-time">${getCurrentTime()}</div>`;
+                }
+                
+                chatMessages.appendChild(messageDiv);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+            
+            // Sample responses with richer content
+            const responses = {
+                "hello": "Hello! 😊 How can I assist with your fitness goals today?",
+                "hi": "Hi there! 💪 Ready to crush your fitness goals? What can I help you with?",
+                "beginner": `Here's a simple full-body beginner workout you can do anywhere:<br><br>
+                {exercise}
+                <br>Start with 2-3 sessions per week, resting at least one day between sessions. Remember to warm up for 5-10 minutes before starting!`,
+                "fat loss": `<b>Effective Fat Loss Tips:</b><br><br>
+                <ul style="font-size: 0.9rem;">
+                    <li>🏃‍♂️ <b>Move more:</b> Aim for 150+ minutes of moderate exercise weekly</li>
+                    <li>🥗 <b>Eat mindfully:</b> Focus on whole foods, lean proteins, and veggies</li>
+                    <li>💧 <b>Stay hydrated:</b> Drink water before meals to reduce appetite</li>
+                    <li>😴 <b>Sleep well:</b> 7-9 hours helps regulate hunger hormones</li>
+                </ul>`,
+                "nutrition": `<b>Healthy Nutrition Basics:</b><br><br>
+                <div class="exercise-card">
+                    <h4>Balanced Meals</h4>
+                    <p>Include protein, healthy fats, and complex carbs in each meal.</p>
+                </div>
+                <div class="exercise-card">
+                    <h4>Hydration</h4>
+                    <p>Drink at least 2L water daily. More if you're active.</p>
+                </div>
+                <div class="exercise-card">
+                    <h4>Portion Control</h4>
+                    <p>Use smaller plates and eat slowly to recognize fullness cues.</p>
+                </div>`,
+                "cardio": `<b>Cardio Exercise Options:</b><br><br>
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px;">
+                    <div style="background: #e3f2fd; padding: 8px; border-radius: 8px; text-align: center; font-size: 0.85rem;">
+                        <i class="fas fa-walking" style="font-size: 1.2rem; color: var(--dark);"></i><br>
+                        Walking
+                    </div>
+                    <div style="background: #e3f2fd; padding: 8px; border-radius: 8px; text-align: center; font-size: 0.85rem;">
+                        <i class="fas fa-running" style="font-size: 1.2rem; color: var(--dark);"></i><br>
+                        Running
+                    </div>
+                    <div style="background: #e3f2fd; padding: 8px; border-radius: 8px; text-align: center; font-size: 0.85rem;">
+                        <i class="fas fa-bicycle" style="font-size: 1.2rem; color: var(--dark);"></i><br>
+                        Cycling
+                    </div>
+                    <div style="background: #e3f2fd; padding: 8px; border-radius: 8px; text-align: center; font-size: 0.85rem;">
+                        <i class="fas fa-swimmer" style="font-size: 1.2rem; color: var(--dark);"></i><br>
+                        Swimming
+                    </div>
+                </div>
+                <p style="margin-top: 10px; font-size: 0.9rem;">Aim for 150 minutes moderate or 75 minutes vigorous cardio weekly.</p>`,
+                "default": `I'm not sure I understand. Here are some things I can help with:<br><br>
+                <div style="display: flex; flex-wrap: wrap; gap: 6px; font-size: 0.9rem;">
+                    <div style="background: #f0f3bd; padding: 6px 10px; border-radius: 12px;">Exercises</div>
+                    <div style="background: #f0f3bd; padding: 6px 10px; border-radius: 12px;">Nutrition</div>
+                    <div style="background: #f0f3bd; padding: 6px 10px; border-radius: 12px;">Weight loss</div>
+                    <div style="background: #f0f3bd; padding: 6px 10px; border-radius: 12px;">Muscle gain</div>
+                </div>`
+            };
+            
+            // Send message function
+            function sendMessage() {
+                const message = userInput.value.trim().toLowerCase();
+                if (message === '') return;
+                
+                // Add user message to chat
+                addMessage(message, true);
+                userInput.value = '';
+                
+                // Show typing indicator
+                const typingElement = showTyping();
+                
+                // Simulate bot thinking
+                setTimeout(() => {
+                    hideTyping(typingElement);
+                    
+                    // Find best matching response
+                    let response = responses['default'];
+                    for (const [key, value] of Object.entries(responses)) {
+                        if (message.includes(key)) {
+                            response = value;
+                            break;
+                        }
+                    }
+                    
+                    addMessage(response, false);
+                }, 800 + Math.random() * 800); // Random delay between 0.8-1.6 seconds
+            }
+            
+            // Event listeners
+            sendButton.addEventListener('click', sendMessage);
+            
+            userInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    sendMessage();
+                }
+            });
+            
+            // Quick suggestion buttons
+            suggestionButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const text = this.textContent.replace(/[^a-zA-Z ]/g, "").trim().toLowerCase();
+                    userInput.value = text;
+                    sendMessage();
+                });
+            });
+            
+            // Auto-focus input on load
+            userInput.focus();
+            
+            // Handle viewport resize
+            window.addEventListener('resize', function() {
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            });
+        });
+    </script>
+</body>
+</html>
